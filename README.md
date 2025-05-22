@@ -43,3 +43,6 @@ Video explicando a arquitetura dos microserviços - [https://www.youtube.com/wat
 ** Acesse o [miro](https://miro.com/app/board/uXjVIy2LsaY=/)
 ![Diagram de Micro-Servicos](https://github.com/user-attachments/assets/0ea2dc40-3047-4001-88b7-61858c7c9bc9)
 
+
+## Cobertura de testes
+![image](https://github.com/user-attachments/assets/5b6e99be-c938-47f4-b762-89ed0906efcb)
