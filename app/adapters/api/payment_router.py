@@ -16,11 +16,13 @@ def get_payment_use_cases(db: Session = Depends(get_db)) -> PaymentUseCases:
     repository = get_payment_repository(RepositoryType.SQL, db)
     return PaymentUseCases(repository)
 
+# Helper function to get service client
+def get_service_client() -> ServiceClient:
+    return ServiceClient()
 
 @router.get("/", response_model=List[PaymentDb])
 def get_all_payments(use_cases: PaymentUseCases = Depends(get_payment_use_cases)):
     return use_cases.get_all_payments()
-
 
 @router.get("/{payment_id}", response_model=PaymentDb)
 def get_payment(payment_id: int, use_cases: PaymentUseCases = Depends(get_payment_use_cases)):
@@ -32,7 +34,6 @@ def get_payment(payment_id: int, use_cases: PaymentUseCases = Depends(get_paymen
         )
     return payment
 
-
 @router.get("/order/{order_id}", response_model=PaymentDb)
 def get_payment_by_order(order_id: int, use_cases: PaymentUseCases = Depends(get_payment_use_cases)):
     payment = use_cases.get_payment_by_order_id(order_id)
@@ -43,11 +44,13 @@ def get_payment_by_order(order_id: int, use_cases: PaymentUseCases = Depends(get
         )
     return payment
 
-
 @router.post("/", response_model=PaymentDb, status_code=status.HTTP_201_CREATED)
-async def create_payment(payment: Payment, use_cases: PaymentUseCases = Depends(get_payment_use_cases)):
+async def create_payment(
+    payment: Payment, 
+    use_cases: PaymentUseCases = Depends(get_payment_use_cases),
+    service_client: ServiceClient = Depends(get_service_client)
+):
     # Validate that the order exists
-    service_client = ServiceClient()
     order = await service_client.get_order(payment.order_id)
     if not order:
         raise HTTPException(
@@ -65,14 +68,13 @@ async def create_payment(payment: Payment, use_cases: PaymentUseCases = Depends(
     
     return use_cases.create_payment(payment)
 
-
 @router.post("/qrcode", response_model=Dict[str, str])
 async def generate_qr_code(
     request: QRCodeRequest, 
-    use_cases: PaymentUseCases = Depends(get_payment_use_cases)
+    use_cases: PaymentUseCases = Depends(get_payment_use_cases),
+    service_client: ServiceClient = Depends(get_service_client)
 ):
     # Validate that the order exists
-    service_client = ServiceClient()
     order = await service_client.get_order(request.order_id)
     if not order:
         raise HTTPException(
@@ -84,12 +86,12 @@ async def generate_qr_code(
     qr_code = use_cases.generate_qr_code(request)
     return {"qr_code": qr_code}
 
-
 @router.patch("/{payment_id}/status/{status_name}", response_model=PaymentDb)
 async def update_payment_status(
     payment_id: int, 
     status_name: PaymentStatus, 
-    use_cases: PaymentUseCases = Depends(get_payment_use_cases)
+    use_cases: PaymentUseCases = Depends(get_payment_use_cases),
+    service_client: ServiceClient = Depends(get_service_client)
 ):
     updated_payment = use_cases.update_payment_status(payment_id, status_name)
     if not updated_payment:
@@ -99,7 +101,6 @@ async def update_payment_status(
         )
     
     # Notify the orders service about the payment status update
-    service_client = ServiceClient()
     await service_client.update_order_payment_status(
         updated_payment.order_id, 
         updated_payment.status
@@ -107,12 +108,12 @@ async def update_payment_status(
     
     return updated_payment
 
-
 @router.post("/webhook", response_model=Dict[str, str])
 async def payment_webhook(
     external_id: str, 
     is_approved: bool, 
-    use_cases: PaymentUseCases = Depends(get_payment_use_cases)
+    use_cases: PaymentUseCases = Depends(get_payment_use_cases),
+    service_client: ServiceClient = Depends(get_service_client)
 ):
     """
     Simulate a payment gateway webhook callback.
@@ -126,7 +127,6 @@ async def payment_webhook(
         )
     
     # Notify the orders service about the payment status update
-    service_client = ServiceClient()
     await service_client.update_order_payment_status(
         payment.order_id, 
         payment.status
