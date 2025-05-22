@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from main import app
 from app.domain.entities.payment import PaymentDb, PaymentStatus
+from app.adapters.api.payment_router import get_payment_use_cases
 from datetime import datetime
 from decimal import Decimal
 
@@ -43,11 +44,17 @@ def test_get_payment_by_id_found(mock_use_cases):
     now = datetime.utcnow()
     mock_payment = PaymentDb(id=1, order_id=1, amount=Decimal('10.0'), status=PaymentStatus.PENDING, external_id='PAY-1', created_at=now, updated_at=now)
     mock_use_cases.get_payment_by_id.return_value = mock_payment
-    response = client.get(f"{API_PREFIX}/1")
-    print(f"Response status: {response.status_code}")
-    print(f"Response body: {response.text}")
-    assert response.status_code == 200
-    assert response.json()["id"] == 1
+    
+    # Override the dependency
+    app.dependency_overrides[get_payment_use_cases] = lambda: mock_use_cases
+    
+    try:
+        response = client.get(f"{API_PREFIX}/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+    finally:
+        # Clean up the dependency override
+        app.dependency_overrides.clear()
 
 def test_get_payment_by_id_not_found(mock_use_cases):
     mock_use_cases.get_payment_by_id.return_value = None
