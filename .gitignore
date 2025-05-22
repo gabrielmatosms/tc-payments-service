@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+.pytest_cache/
+.coverage/
+.DS_Store
+.vscode/
+.idea/
+.venv/
+htmlcov/
+venv/
+payments_service.db/

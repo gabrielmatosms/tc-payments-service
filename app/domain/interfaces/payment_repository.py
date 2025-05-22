@@ -23,4 +23,8 @@ class PaymentRepository(ABC):
 
     @abstractmethod
     def update_status(self, payment_id: int, status: PaymentStatus) -> Optional[PaymentDb]:
+        pass
+
+    @abstractmethod
+    def update_external_id(self, payment_id: int, external_id: str) -> Optional[PaymentDb]:
         pass 
